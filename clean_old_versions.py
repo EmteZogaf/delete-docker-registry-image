@@ -29,7 +29,7 @@ def get_created_date_for_tag(tag, repository, auth, args):
         response = requests.get(args.registry_url + "/v2/" + repository + "/blobs/" + digest,
                                 auth=auth, verify=args.no_check_certificate)
         created_str = response.json()['created'].split(".")[0]
-    return(datetime.strptime(created_str,"%Y-%m-%dT%H:%M:%S"))
+    return(datetime.strptime(created_str,DATE_FORMAT))
 
 def main():
     """cli entrypoint"""
@@ -86,7 +86,11 @@ def main():
                         dest="password",
                         help="Password for auth")
     parser.add_argument("--no_check_certificate",
-			action='store_false')
+            action='store_false')
+    parser.add_argument("--dry-run",
+            dest='dry_run',
+            action='store_true',
+            help="Dry run - show which images would have been deleted but do not delete them")
     args = parser.parse_args()
 
     # Get catalog
@@ -144,6 +148,8 @@ def main():
             for tag in tags_to_delete:
                 command2run = "{0} --image {1}:{2}". \
                     format(args.script_path, repository, tag)
+                if args.dry_run :
+                    command2run = command2run + " --dry-run"
                 print("Running: {0}".format(command2run))
                 out = subprocess.Popen(command2run, shell=True, stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT).stdout.read()
